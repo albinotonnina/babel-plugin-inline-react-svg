@@ -10,14 +10,38 @@ import escapeBraces from './escapeBraces';
 import transformSvg from './transformSvg';
 import fileExistsWithCaseSync from './fileExistsWithCaseSync';
 
-const buildSvg = template(`  
-  var SVG_NAME = (props) => (SVG_CODE);
+const buildSvg = template(`
+  var SVG_NAME = function SVG_NAME(props) { return SVG_CODE; };
 `);
 
 const buildSvgWithDefaults = template(`
   var SVG_NAME = function SVG_NAME(props) { return SVG_CODE; };
   SVG_NAME.defaultProps = SVG_DEFAULT_PROPS_CODE;
 `);
+
+const buildSvgSF = template(`  
+  class SVG_NAME extends React.Component {
+    render (){
+      const props = Object.assign({}, this.props);
+      const refcb = this.props.svgRef ? this.props.svgRef : function(){}
+      delete props.svgRef
+      return SVG_CODE
+    }
+  }
+`);
+
+const buildSvgWithDefaultsSF = template(`
+  class SVG_NAME extends React.Component  {
+    render (){
+      const props = Object.assign({}, this.props);
+      const refcb = this.props.svgRef ? this.props.svgRef : function(){}
+      delete props.svgRef
+      return SVG_CODE
+    }
+  }
+  SVG_NAME.defaultProps = SVG_DEFAULT_PROPS_CODE;
+`);
+
 
 let ignoreRegex;
 
@@ -38,7 +62,7 @@ export default ({ types: t }) => ({
     },
     ImportDeclaration(path, state) {
       const importPath = path.node.source.value;
-      const { ignorePattern, caseSensitive } = state.opts;
+      const { ignorePattern, caseSensitive, statefulComponent } = state.opts;
       const { file } = state;
       if (ignorePattern) {
         // Only set the ignoreRegex once:
@@ -96,15 +120,35 @@ export default ({ types: t }) => ({
             }
           });
 
-          svgCode.openingElement.attributes = keepProps;
+          svgCode.openingElement.attributes = keepProps
+
+          if (statefulComponent){
+            svgCode.openingElement.attributes.push(
+              t.jSXAttribute(
+                t.jSXIdentifier('ref'),
+                t.jSXExpressionContainer(
+                  t.arrowFunctionExpression(
+                    [t.identifier('el')],
+                    t.callExpression(
+                      t.identifier('refcb'),
+                      [t.identifier('el')]
+                    )
+                  )
+                )
+              )
+            );
+          }
+
           opts.SVG_DEFAULT_PROPS_CODE = t.objectExpression(defaultProps);
         }
 
         if (opts.SVG_DEFAULT_PROPS_CODE) {
-          const svgReplacement = buildSvgWithDefaults(opts);
+          const svgReplacement = (
+            statefulComponent ? buildSvgWithDefaultsSF(opts) : buildSvgWithDefaults(opts)
+          );
           path.replaceWithMultiple(svgReplacement);
         } else {
-          const svgReplacement = buildSvg(opts);
+          const svgReplacement = statefulComponent ? buildSvgSF(opts) : buildSvg(opts);
           path.replaceWith(svgReplacement);
         }
         file.get('ensureReact')();
