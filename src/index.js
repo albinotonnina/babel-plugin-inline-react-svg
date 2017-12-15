@@ -10,8 +10,8 @@ import escapeBraces from './escapeBraces';
 import transformSvg from './transformSvg';
 import fileExistsWithCaseSync from './fileExistsWithCaseSync';
 
-const buildSvg = template(`
-  var SVG_NAME = function SVG_NAME(props) { return SVG_CODE; };
+const buildSvg = template(`  
+  var SVG_NAME = (props) => (SVG_CODE);
 `);
 
 const buildSvgWithDefaults = template(`

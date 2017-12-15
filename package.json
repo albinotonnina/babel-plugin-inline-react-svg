@@ -40,6 +40,7 @@
     "react": "^15.3.1"
   },
   "dependencies": {
+    "babel-plugin-stateful-functional-react-components": "^0.0.5",
     "babel-template": "^6.15.0",
     "babel-traverse": "^6.15.0",
     "babylon": "^6.10.0",
