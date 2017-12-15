@@ -8,7 +8,7 @@
     "sanity": "babel-node test/sanity.js",
     "build": "babel src --out-dir lib",
     "lint": "eslint src/",
-    "prepublish": "npm run build"
+    "postinstall": "npm run build"
   },
   "repository": {
     "type": "git",
